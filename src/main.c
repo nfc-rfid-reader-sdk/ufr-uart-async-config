@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include "uFCoder.h"
 
+#define APP_VERSION         "1.1"
 #define DEFAULT_PORT 		"/dev/ttyUSB0"
 #define DEFAULT_MODE		1
 #define DEFAULT_BAUD_RATE	1000000
@@ -21,12 +22,16 @@ void usage(void) {
 			"------------------------------------------------\n"
 			"Parameters:\n"
 			"-c              - Com port name, on witch uFR is attached. Default is \"/dev/ttyUSB0\".\n"
-			"-m [on|off|get] - Turn uFR asynchronous mode on or off. Default is [on]. Use [get] to read settings stored in uFR.\n"
+			"-m [on|off|get"
+			"          |init]- Turn uFR asynchronous mode on or off. Default is [on].\n"
+			"                  Use [get] to read settings stored in uFR.\n"
+			"                  Use [init] for new devices to set default parameters.\n"
 			"-s com_speed    - Set communication baud_rate. Default is 1Mbps.\n"
 			"-e [on|off]     - Enable prefix character.\n"
 			"-r [on|off]     - Enable transmit on tag remove event.\n"
 			"-p 00           - Define prefix character (ascii hex representation).\n"
 			"-f 00           - Define sufix character (ascii hex representation).\n"
+			"-v              - Print tool version.\n"
 			"\n");
 }
 
@@ -45,8 +50,11 @@ int main(int argc, char**argv)
 		usage();
 		return 1;
 	}
-	while ((c = getopt(argc, argv, "c:m:s:e:r:p:f:")) != -1) {
+	while ((c = getopt(argc, argv, "c:m:s:e:r:p:f:v")) != -1) {
 		switch (c) {
+		case 'v':
+			printf("Tool version is: %s\n", APP_VERSION);
+			break;
 		case 'c':
 			user_c = 1;
 			port_name = malloc(strlen(optarg) + 1);
@@ -61,6 +69,8 @@ int main(int argc, char**argv)
 					mode = 0;
 				} else if (!strcmp(optarg, "get")) {
 					mode = 2;
+				} else if (!strcmp(optarg, "init")) {
+					mode = 3;
 				} else {
 					printf("Error: wrong mode option \"%s\".\n", optarg);
 					usage();
@@ -144,6 +154,23 @@ int main(int argc, char**argv)
 	}
 	free(port_name);
 
+	// Init:
+	if (mode == 3) {
+		status = SetAsyncCardIdSendConfig(0,
+										  0,
+										  0,
+										  0x0D,
+										  0,
+										  1000000);
+		ReaderClose();
+		if (status != UFR_OK) {
+			printf("Error while trying to read uFR asynchronous mode configuration.\n");
+		} else {
+			printf("Successfully initialized. ATTENTION: uFR asynchronous mode is DISABLED by default.\n");
+		}
+		return EXIT_SUCCESS;
+	}
+
 	if ((mode == 2) || !(user_m && user_s && user_e && user_r && user_p && user_f)) {
 		status = GetAsyncCardIdSendConfig(&send_enable,
 				                          &prefix_enable,
@@ -219,5 +246,5 @@ int main(int argc, char**argv)
 	}
 
 	ReaderClose();
-	return 0;
+	return EXIT_SUCCESS;
 }
