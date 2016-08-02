@@ -36,6 +36,9 @@
 								<option id="gnu.c.link.option.libs.702614765" name="Libraries (-l)" superClass="gnu.c.link.option.libs" useByScannerDiscovery="false" valueType="libs">
 									<listOptionValue builtIn="false" value="uFCoder-x86_64"/>
 								</option>
+								<option id="gnu.c.link.option.paths.1071265387" superClass="gnu.c.link.option.paths" useByScannerDiscovery="false" valueType="libPaths">
+									<listOptionValue builtIn="false" value="../lib/Linux/x86_64"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.754516671" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
@@ -89,6 +92,9 @@
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.exe.release.1521404072" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.exe.release">
 								<option id="gnu.c.link.option.libs.1230147891" name="Libraries (-l)" superClass="gnu.c.link.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" value="uFCoder-x86_64"/>
+								</option>
+								<option id="gnu.c.link.option.paths.360561395" superClass="gnu.c.link.option.paths" valueType="libPaths">
+									<listOptionValue builtIn="false" value="../lib/Linux/x86_64"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.474004537" superClass="cdt.managedbuild.tool.gnu.c.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>

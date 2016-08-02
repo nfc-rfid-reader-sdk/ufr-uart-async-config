@@ -29,7 +29,7 @@ all: ufr-uart-async-config
 ufr-uart-async-config: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C Linker'
-	gcc  -o "ufr-uart-async-config" $(OBJS) $(USER_OBJS) $(LIBS)
+	gcc -L../lib/Linux/x86_64 -o "ufr-uart-async-config" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
