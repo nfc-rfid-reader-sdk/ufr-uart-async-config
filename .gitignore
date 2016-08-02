@@ -1,2 +1,10 @@
 /ARM_RPi_Release/src
+/Debug_Win32/src
+/Debug_Win64/src
+/Release_Win32/src
+/Release_Win64/src
+/Release_Win64/
+/Release_Win32/
+/Debug_Win32/
+/Debug_Win64/
 /ARM_RPi_Release/

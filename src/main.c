@@ -9,10 +9,17 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include "uFCoder.h"
+#include <uFCoder.h>
 
-#define APP_VERSION         "1.1"
+#define APP_VERSION         "1.2"
+
+#if defined _WIN32 || defined _WIN64
+#define DEFAULT_PORT		"COM1"
+#else
+//Linux
 #define DEFAULT_PORT 		"/dev/ttyUSB0"
+#endif
+
 #define DEFAULT_MODE		1
 #define DEFAULT_BAUD_RATE	1000000
 
@@ -22,7 +29,7 @@ void usage(void) {
 			"------------------------------------------------\n"
 			"Parameters:\n"
 			"-c              - Com port name, on witch uFR is attached. Default is \"/dev/ttyUSB0\".\n"
-			"-m [on|off|get"
+			"-m [on|off|get\n"
 			"          |init]- Turn uFR asynchronous mode on or off. Default is [on].\n"
 			"                  Use [get] to read settings stored in uFR.\n"
 			"                  Use [init] for new devices to set default parameters.\n"
@@ -32,6 +39,8 @@ void usage(void) {
 			"-p 00           - Define prefix character (ascii hex representation).\n"
 			"-f 00           - Define sufix character (ascii hex representation).\n"
 			"-v              - Print tool version.\n"
+			"-o [on|off]	 - Reverse byte order.\n"
+			"-d [on|off]     - Decimal number representation.\n"
 			"\n");
 }
 
@@ -39,18 +48,19 @@ int main(int argc, char**argv)
 {
 	UFR_STATUS status;
 	int c, i_temp;
-	int user_c = 0, user_m = 0, user_s = 0, user_e = 0, user_r = 0, user_p = 0, user_f = 0;
+	int user_c = 0, user_m = 0, user_s = 0, user_e = 0, user_r = 0, user_p = 0, user_f = 0, user_o = 0, user_d = 0;
 	uint8_t mode = DEFAULT_MODE;
 	char *port_name;
-	uint8_t send_enable, prefix_enable, prefix, suffix, send_removed_enable;
+	uint8_t send_enable, prefix_enable, prefix, suffix, send_removed_enable, byte_order, decimal_representation;
 	uint8_t user_prefix_enable = 0, user_prefix = 0, user_suffix = 0, user_send_removed_enable = 0;
+	uint8_t user_byte_order = 0, user_decimal_representation = 0;
 	uint32_t async_baud_rate = DEFAULT_BAUD_RATE, user_baud_rate = DEFAULT_BAUD_RATE;
 
 	if (argc < 2) {
 		usage();
 		return 1;
 	}
-	while ((c = getopt(argc, argv, "c:m:s:e:r:p:f:v")) != -1) {
+	while ((c = getopt(argc, argv, "c:m:s:e:r:p:f:o:d:v")) != -1) {
 		switch (c) {
 		case 'v':
 			printf("Tool version is: %s\n", APP_VERSION);
@@ -132,6 +142,30 @@ int main(int argc, char**argv)
 			}
 			user_suffix = (unsigned char)i_temp;
 			break;
+		case 'o':
+			user_o = 1;
+			if (!strcmp(optarg, "on")) {
+				user_byte_order = 1;
+			} else if (!strcmp(optarg, "off")) {
+				user_byte_order = 0;
+			} else {
+				printf("Error: wrong prefix enable option \"%s\".\n", optarg);
+				usage();
+				return 1;
+			}
+			break;
+		case 'd':
+			user_d = 1;
+			if (!strcmp(optarg, "on")) {
+				user_decimal_representation = 1;
+			} else if (!strcmp(optarg, "off")) {
+				user_decimal_representation = 0;
+			} else {
+				printf("Error: wrong prefix enable option \"%s\".\n", optarg);
+				usage();
+				return 1;
+			}
+			break;
 		case '?':
 			usage();
 			return 1;
@@ -146,7 +180,12 @@ int main(int argc, char**argv)
 		strcpy(port_name, DEFAULT_PORT);
 	}
 
+#if defined _WIN32 || defined _WIN64
+	status = ReaderOpenEx(1, NULL, 0, NULL);
+#else
+	//Linux
 	status = ReaderOpenEx(1, port_name, 1, NULL);
+#endif
 	if (status != UFR_OK) {
 		printf("Can't open port %s.\n", port_name);
 		free(port_name);
@@ -156,10 +195,12 @@ int main(int argc, char**argv)
 
 	// Init:
 	if (mode == 3) {
-		status = SetAsyncCardIdSendConfig(0,
+		status = SetAsyncCardIdSendConfigEx(0,
 										  0,
 										  0,
 										  0x0D,
+										  0,
+										  0,
 										  0,
 										  1000000);
 		ReaderClose();
@@ -171,12 +212,14 @@ int main(int argc, char**argv)
 		return EXIT_SUCCESS;
 	}
 
-	if ((mode == 2) || !(user_m && user_s && user_e && user_r && user_p && user_f)) {
-		status = GetAsyncCardIdSendConfig(&send_enable,
+	if ((mode == 2) || !(user_m && user_s && user_e && user_r && user_p && user_f && user_o && user_d)) {
+		status = GetAsyncCardIdSendConfigEx(&send_enable,
 				                          &prefix_enable,
 										  &prefix,
 										  &suffix,
 										  &send_removed_enable,
+										  &byte_order,
+										  &decimal_representation,
 										  &async_baud_rate);
 		if (status != UFR_OK) {
 			printf("Error while trying to read uFR asynchronous mode configuration.\n");
@@ -198,12 +241,23 @@ int main(int argc, char**argv)
 			printf("Prefix character is DISABLED.\n");
 		}
 		printf("Prefix character is 0x%02X.\n", prefix);
-		printf("Sufix character is 0x%02X.\n", suffix);
+		printf("Suffix character is 0x%02X.\n", suffix);
 		if (send_removed_enable) {
 			printf("Transmit on tag remove event is ENABLED.\n");
 		} else {
 			printf("Transmit on tag remove event is DISABLED.\n");
 		}
+
+		if(byte_order)
+			printf("Reverse byte order is ENABLED.\n");
+		else
+			printf("Reverse byte order is DISABLED.\n");
+
+		if(decimal_representation)
+			printf("Decimal representation of number is ENABLED.\n");
+		else
+			printf("Decimal representation of number is DISABLED.\n");
+
 		printf("Configured baud rate is: %d.\n", async_baud_rate);
 
 		ReaderClose();
@@ -233,11 +287,19 @@ int main(int argc, char**argv)
 		suffix = user_suffix;
 	}
 
-	status = SetAsyncCardIdSendConfig(mode,
+	if(user_o)
+		byte_order = user_byte_order;
+
+	if(user_d)
+		decimal_representation = user_decimal_representation;
+
+	status = SetAsyncCardIdSendConfigEx(mode,
 									  prefix_enable,
 									  prefix,
 									  suffix,
 									  send_removed_enable,
+									  byte_order,
+									  decimal_representation,
 									  async_baud_rate);
 	if (status != UFR_OK) {
 		printf("Error while trying to update uFR asynchronous mode configuration.\n");
